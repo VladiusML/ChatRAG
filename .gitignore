@@ -1,0 +1,5 @@
+venv/
+pgvector/
+.env
+cache_hf/
+.git
