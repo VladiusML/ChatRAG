@@ -4,23 +4,14 @@ import json
 from psycopg2.extras import execute_values
 import numpy as np
 from typing import List, Dict, Any, Optional
-from langchain_community.vectorstores.pgvector import PGVector
 from langchain.embeddings.base import Embeddings
 from langchain.schema.document import Document
-from langchain_huggingface import HuggingFaceEmbeddings
 from pgvector.psycopg2 import register_vector
-from dotenv import load_dotenv
-load_dotenv()
-DB_HOST = os.getenv('DB_HOST')
-DB_USER = os.getenv('DB_USER')
-DB_NAME = os.getenv('DB_NAME')
-DB_PORT = os.getenv('DB_PORT')
-DB_SYSTEM = os.getenv('DB_SYSTEM')
 
 class PostgresVectorStore:
     def __init__(
         self,
-        connection_string: str,
+        connection_config: dict,
         embedding_model: Embeddings,
         collection_name: str = "documents",
         user_id: Optional[int] = None
@@ -34,7 +25,7 @@ class PostgresVectorStore:
             collection_name: Имя коллекции/хранилища
             user_id: ID пользователя, которому принадлежит хранилище
         """
-        self.connection_string = connection_string
+        self.connection_config = connection_config
         self.embedding_model = embedding_model
         self.collection_name = collection_name
         self.user_id = user_id
@@ -44,7 +35,7 @@ class PostgresVectorStore:
     
     def _init_vectorstore(self):
         """Инициализирует векторное хранилище для пользователя"""
-        conn = psycopg2.connect(self.connection_string)
+        conn = psycopg2.connect(**self.connection_config)
         register_vector(conn)
         try:
             with conn.cursor() as cur:
@@ -96,7 +87,7 @@ class PostgresVectorStore:
             metadatas = [{} for _ in texts]
         
         embeddings = self.embedding_model.embed_documents(texts)
-        conn = psycopg2.connect(self.connection_string)
+        conn = psycopg2.connect(**self.connection_config)
         register_vector(conn)
         try:
             with conn.cursor() as cur:
@@ -135,7 +126,7 @@ class PostgresVectorStore:
             Список Document с результатами поиска
         """
         query_embedding = self.embedding_model.embed_query(query)
-        conn = psycopg2.connect(self.connection_string)
+        conn = psycopg2.connect(**self.connection_config)
         register_vector(conn)
         try:
             with conn.cursor() as cur:
@@ -179,7 +170,7 @@ class PostgresVectorStore:
         Returns:
             Список словарей с информацией о хранилищах
         """
-        conn = psycopg2.connect(self.connection_string)
+        conn = psycopg2.connect(**self.connection_config)
         register_vector(conn)
         try:
             with conn.cursor() as cur:
@@ -211,55 +202,3 @@ class PostgresVectorStore:
                 return stores
         finally:
             conn.close()
-
-def example_usage():
-    connection_string = f"{DB_SYSTEM}://{DB_USER}@{DB_HOST}:{DB_PORT}/{DB_NAME}" 
-
-    model_name = "sentence-transformers/all-mpnet-base-v2"
-    model_kwargs = {'device': 'mps'}
-    encode_kwargs = {'normalize_embeddings': False}
-    embedding_model = HuggingFaceEmbeddings(
-        model_name=model_name,
-        model_kwargs=model_kwargs,
-        encode_kwargs=encode_kwargs,
-        cache_folder = "cache_hf"
-    )    
-
-    vectorstore = PostgresVectorStore(
-        connection_string=connection_string,
-        embedding_model=embedding_model,
-        collection_name="my_collection",
-        user_id=None
-    )
-    
-    texts = [
-        "Архитектура RAG (Retrieval-Augmented Generation) объединяет поиск и генерацию.",
-        "PostgreSQL с расширением pgvector позволяет эффективно хранить и искать векторные представления.",
-        "Микросервисная архитектура повышает масштабируемость и отказоустойчивость системы."
-    ]
-    
-    metadatas = [
-        {"source": "article_1", "category": "architecture"},
-        {"source": "article_2", "category": "database"},
-        {"source": "article_3", "category": "design_patterns"}
-    ]
-    
-    doc_ids = vectorstore.add_texts(texts, metadatas)
-    print(f"Добавлено {len(doc_ids)} документов")
-    
-    query = "Как хранить векторные представления в базе данных?"
-    results = vectorstore.similarity_search(query, k=2)
-    
-    for doc in results:
-        print(f"Сходство: {doc.metadata['similarity']:.4f}")
-        print(f"Содержание: {doc.page_content}")
-        print(f"Метаданные: {doc.metadata}")
-        print("---")
-    
-    all_stores = vectorstore.get_all_vectorstores_for_user(vectorstore.user_id)
-    print(f"Пользователь имеет {len(all_stores)} векторных хранилищ")
-    for store in all_stores:
-        print(f"- {store['name']}: {store['document_count']} документов")
-
-if __name__ == "__main__":
-    example_usage()
