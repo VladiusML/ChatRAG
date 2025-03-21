@@ -40,6 +40,7 @@ def vectorstore():
     )
 
 def test_add_and_search_texts(vectorstore):
+    top_k = 2
     texts = [
         "Искусственный интеллект используется в медицине и финансах.",
         "Квантовые компьютеры могут решать сложные задачи быстрее обычных.",
@@ -56,11 +57,25 @@ def test_add_and_search_texts(vectorstore):
     assert len(doc_ids) == len(texts), "Количество добавленных документов не совпадает"
 
     query = "Как работают квантовые компьютеры?"
-    results = vectorstore.similarity_search(query, k=2)
+    results = vectorstore.similarity_search(query, k=top_k)
+    
+    print(f"\nТоп {top_k} документов:")
+    for i, doc in enumerate(results):
+        print("\n")
+        print(f"Документ {i+1}")
+        print(doc.page_content)
+        print(f"Схожесть: {doc.metadata['similarity']}")
 
     assert len(results) > 0, "Поиск не вернул результатов"
     assert any("квантовые компьютеры" in doc.page_content.lower() for doc in results), "В результатах отсутствует ожидаемый текст"
 
 def test_get_all_vectorstores(vectorstore):
     all_stores = vectorstore.get_all_vectorstores_for_user(vectorstore.user_id)
+
+    print("Хранилища:")
+    for store in all_stores:
+        print(f"ID: {store['vectorstore_id']}")
+        print(f"Name: {store['name']}")
+        print(f"Description: {store['description']}")
+
     assert isinstance(all_stores, list), "Возвращаемый результат должен быть списком"
