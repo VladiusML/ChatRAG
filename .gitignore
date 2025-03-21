@@ -3,3 +3,4 @@ pgvector/
 .env
 cache_hf/
 .git
+.pytest_cache/
