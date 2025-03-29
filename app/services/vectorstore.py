@@ -114,6 +114,7 @@ class PostgresVectorStoreService:
                 "vectorstore_id": vs.vectorstore_id,
                 "name": vs.name,
                 "description": vs.description,
+                "user_id": vs.user_id,
                 "created_at": vs.created_at,
                 "document_count": document_count
             })
@@ -146,12 +147,12 @@ class PostgresVectorStoreService:
         try:
             with conn.cursor() as cur:
                 data = [
-                    (vectorstore_id, text, json.dumps(metadata), embedding)
-                    for text, metadata, embedding in zip(texts, metadatas, embeddings)
+                    (vectorstore_id, text, json.dumps(doc_metadata), embedding)
+                    for text, doc_metadata, embedding in zip(texts, metadatas, embeddings)
                 ]
                 
                 query = """
-                INSERT INTO documents (vectorstore_id, content, metadata, embedding)
+                INSERT INTO documents (vectorstore_id, content, doc_metadata, embedding)
                 VALUES %s
                 RETURNING doc_id
                 """
@@ -188,7 +189,7 @@ class PostgresVectorStoreService:
             with conn.cursor() as cur:
                 cur.execute(
                     """
-                    SELECT doc_id, content, metadata, 
+                    SELECT doc_id, content, doc_metadata, 
                         1 - (embedding <=> %s::vector) as similarity
                     FROM documents
                     WHERE vectorstore_id = %s

@@ -1,5 +1,6 @@
 from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, UniqueConstraint
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import JSONB, ARRAY
+from pgvector.sqlalchemy import Vector
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
@@ -38,5 +39,7 @@ class Document(Base):
     content = Column(Text)
     doc_metadata = Column(JSONB)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    
+    embedding = Column(Vector(768))
     
     vectorstore = relationship("VectorStore", back_populates="documents")

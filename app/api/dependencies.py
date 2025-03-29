@@ -13,7 +13,15 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 def get_embedding_model():
     if settings.EMBEDDING_MODEL_TYPE == "sentence_transformers":
-        return HuggingFaceEmbeddings(model_name=settings.EMBEDDING_MODEL_NAME)
+        model_kwargs = {'device': 'mps'}
+        encode_kwargs = {'normalize_embeddings': False}
+        embedding_model = HuggingFaceEmbeddings(
+            model_name=settings.EMBEDDING_MODEL_NAME,
+            model_kwargs=model_kwargs,
+            encode_kwargs=encode_kwargs,
+            cache_folder="cache_hf"
+        )  
+        return embedding_model
     else:
         raise ValueError(f"Unsupported embedding model type: {settings.EMBEDDING_MODEL_TYPE}")
 

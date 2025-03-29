@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List
 
 from schemas import schemas
-from models.models import VectorStore
+from models import models
 from services.vectorstore import PostgresVectorStoreService
 from api.dependencies import get_db, get_vectorstore_service, get_vectorstore
 
@@ -13,11 +13,11 @@ router = APIRouter(
 
 @router.get("/{vectorstore_id}", response_model=schemas.VectorStore)
 def read_vectorstore(
-    vectorstore: VectorStore = Depends(get_vectorstore),
+    vectorstore: models.VectorStore = Depends(get_vectorstore),
     db: Session = Depends(get_db)
 ):
     """Получить информацию о векторном хранилище"""
-    document_count = db.query(schemas.Document).filter(schemas.Document.vectorstore_id == vectorstore.vectorstore_id).count()
+    document_count = db.query(models.Document).filter(models.Document.vectorstore_id == vectorstore.vectorstore_id).count()
     return {
         **vectorstore.__dict__,
         "document_count": document_count
@@ -28,7 +28,7 @@ def add_texts(
     request: schemas.AddTextsRequest,
     vectorstore_id: int,
     vectorstore_service: PostgresVectorStoreService = Depends(get_vectorstore_service),
-    vectorstore: VectorStore = Depends(get_vectorstore)
+    vectorstore: models.VectorStore = Depends(get_vectorstore)
 ):
     """Добавить тексты в векторное хранилище"""
     doc_ids = vectorstore_service.add_texts(
@@ -41,7 +41,7 @@ def similarity_search(
     request: schemas.SimilaritySearchRequest,
     vectorstore_id: int,
     vectorstore_service: PostgresVectorStoreService = Depends(get_vectorstore_service),
-    vectorstore: VectorStore = Depends(get_vectorstore)
+    vectorstore: models.VectorStore = Depends(get_vectorstore)
 ):
     """Выполнить поиск по сходству в векторном хранилище"""
     results = vectorstore_service.similarity_search(
