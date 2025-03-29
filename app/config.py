@@ -29,7 +29,7 @@ class Settings(BaseSettings):
             password=self.POSTGRES_PASSWORD,
             host=self.POSTGRES_HOST,
             port=self.POSTGRES_PORT,
-            db=self.POSTGRES_DB
+            db=self.POSTGRES_DB,
         )
         return postgres_url
 

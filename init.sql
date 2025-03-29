@@ -19,7 +19,7 @@ CREATE TABLE documents (
     vectorstore_id INTEGER REFERENCES vectorstores(vectorstore_id),
     content TEXT,
     doc_metadata JSONB,
-    embedding vector(768), 
+    embedding vector(768),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
