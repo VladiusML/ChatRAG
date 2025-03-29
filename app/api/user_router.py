@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from typing import List, Dict, Any
+from sqlalchemy.exc import IntegrityError
+from typing import List
 
 from schemas import schemas
 from models.models import User, VectorStore
@@ -18,7 +19,14 @@ def create_user(
     vectorstore_service: PostgresVectorStoreService = Depends(get_vectorstore_service)
 ):
     """Создать нового пользователя"""
-    return vectorstore_service.create_user(db, user.username)
+    try:
+        return vectorstore_service.create_user(db, user.username)
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Пользователь с таким username уже существует"
+        )
 
 @router.get("/{user_id}", response_model=schemas.User)
 def read_user(user: User = Depends(get_user)):
