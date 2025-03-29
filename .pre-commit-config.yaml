@@ -1,0 +1,38 @@
+# .pre-commit-config.yaml
+
+# pre-commit-hooks для различных общих задач
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v4.4.0
+  hooks:
+    - id: trailing-whitespace
+    - id: end-of-file-fixer
+    - id: check-yaml
+    - id: check-merge-conflict
+    - id: detect-private-key
+    - id: debug-statements
+
+# isort для сортировки импортов
+- repo: https://github.com/PyCQA/isort
+  rev: 5.12.0
+  hooks:
+    - id: isort
+
+# black для автоформатирования кода
+- repo: https://github.com/psf/black
+  rev: 23.1.0
+  hooks:
+    - id: black
+      exclude: ^.*\b(migrations)\b.*$
+
+# autoflake для автоматического исправления неиспользуемых импортов
+- repo: https://github.com/PyCQA/autoflake
+  rev: v2.0.1
+  hooks:
+    - id: autoflake
+
+# flake8 для проверки стиля кода (плюс дополнительные параметры)
+- repo: https://github.com/pre-commit/mirrors-flake8
+  rev: v5.0.4  # Укажите версию flake8, которую хотите использовать
+  hooks:
+    - id: flake8
+      args: ['--max-line-length=120']  # Ограничение на максимальную длину строки
