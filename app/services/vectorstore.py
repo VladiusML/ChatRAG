@@ -2,12 +2,10 @@ import os
 import json
 import psycopg2
 from psycopg2.extras import execute_values
-from typing import List, Dict, Any, Optional, Tuple
-from langchain.schema.document import Document
+from typing import List, Dict, Any, Optional
 from langchain.embeddings.base import Embeddings
 from pgvector.psycopg2 import register_vector
 from config import settings
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Session
 from models.models import User, VectorStore, Document as DBDocument
 

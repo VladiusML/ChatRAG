@@ -6,14 +6,12 @@ class Settings(BaseSettings):
     APP_NAME: str = "RAG Service API"
     API_V1_PREFIX: str = "/api/v1"
     
-    # Database
     POSTGRES_USER: str = os.getenv("POSTGRES_USER", "postgres")
     POSTGRES_PASSWORD: str = os.getenv("POSTGRES_PASSWORD", "mysecretpassword")
     POSTGRES_DB: str = os.getenv("POSTGRES_DB", "rag_vectorstore")
     POSTGRES_HOST: str = os.getenv("POSTGRES_HOST", "localhost")
     POSTGRES_PORT: str = os.getenv("POSTGRES_PORT", "5434")
     
-    # Embedding model config
     EMBEDDING_MODEL_TYPE: str = os.getenv("EMBEDDING_MODEL_TYPE", "sentence_transformers")
     EMBEDDING_MODEL_NAME: str = os.getenv("EMBEDDING_MODEL_NAME", "all-MiniLM-L6-v2")
     

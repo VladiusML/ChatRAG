@@ -11,7 +11,6 @@ router = APIRouter(
     prefix="/users",
     tags=["Users"],)
 
-# Маршруты для пользователей
 @router.post("/", response_model=schemas.User, status_code=status.HTTP_201_CREATED)
 def create_user(
     user: schemas.UserCreate,
@@ -26,7 +25,6 @@ def read_user(user: User = Depends(get_user)):
     """Получить информацию о пользователе"""
     return user
 
-# Маршруты для векторных хранилищ
 @router.post("/{user_id}/vectorstores/", response_model=schemas.VectorStore, status_code=status.HTTP_201_CREATED)
 def create_vectorstore(
     vectorstore: schemas.VectorStoreCreate,
