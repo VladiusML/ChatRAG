@@ -10,21 +10,26 @@ from sqlalchemy.orm import Session, sessionmaker
 engine = create_engine(settings.DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
+
 def get_embedding_model():
     if settings.EMBEDDING_MODEL_TYPE == "sentence_transformers":
-        model_kwargs = {'device': 'mps'}
-        encode_kwargs = {'normalize_embeddings': False}
+        model_kwargs = {"device": "mps"}
+        encode_kwargs = {"normalize_embeddings": False}
         embedding_model = HuggingFaceEmbeddings(
             model_name=settings.EMBEDDING_MODEL_NAME,
             model_kwargs=model_kwargs,
             encode_kwargs=encode_kwargs,
-            cache_folder="cache_hf"
-        )  
+            cache_folder="cache_hf",
+        )
         return embedding_model
     else:
-        raise ValueError(f"Unsupported embedding model type: {settings.EMBEDDING_MODEL_TYPE}")
+        raise ValueError(
+            f"Unsupported embedding model type: {settings.EMBEDDING_MODEL_TYPE}"
+        )
+
 
 embedding_model = get_embedding_model()
+
 
 def get_db() -> Generator[Session, Any, None]:
     db = SessionLocal()
@@ -33,34 +38,37 @@ def get_db() -> Generator[Session, Any, None]:
     finally:
         db.close()
 
+
 def get_vectorstore_service() -> PostgresVectorStoreService:
     return PostgresVectorStoreService(
         embedding_model=embedding_model,
-        connection_config=settings.DATABASE_CONNECTION_CONFIG
+        connection_config=settings.DATABASE_CONNECTION_CONFIG,
     )
+
 
 def get_user(
     user_id: int,
     db: Session = Depends(get_db),
-    vectorstore_service: PostgresVectorStoreService = Depends(get_vectorstore_service)
+    vectorstore_service: PostgresVectorStoreService = Depends(get_vectorstore_service),
 ):
     user = vectorstore_service.get_user(db, user_id)
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"User with ID {user_id} not found"
+            detail=f"User with ID {user_id} not found",
         )
     return user
+
 
 def get_vectorstore(
     vectorstore_id: int,
     db: Session = Depends(get_db),
-    vectorstore_service: PostgresVectorStoreService = Depends(get_vectorstore_service)
+    vectorstore_service: PostgresVectorStoreService = Depends(get_vectorstore_service),
 ):
     vectorstore = vectorstore_service.get_vectorstore(db, vectorstore_id)
     if vectorstore is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Vector store with ID {vectorstore_id} not found"
+            detail=f"Vector store with ID {vectorstore_id} not found",
         )
     return vectorstore

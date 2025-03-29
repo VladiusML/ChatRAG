@@ -10,7 +10,7 @@ from fastapi.responses import JSONResponse
 app = FastAPI(
     title="Vector Store API",
     description="API для работы с векторными хранилищами текстовых данных",
-    version="0.1.0"
+    version="0.1.0",
 )
 
 app.include_router(user_router, prefix="/api/v1")
@@ -24,9 +24,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.get("/", tags=["Health Check"])
 async def health_check():
     return {"status": "ok"}
+
 
 @app.exception_handler(Exception)
 async def generic_exception_handler(request, exc):
@@ -39,6 +41,7 @@ async def generic_exception_handler(request, exc):
         status_code=500,
         content={"detail": "Внутренняя ошибка сервера"},
     )
+
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))

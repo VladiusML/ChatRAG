@@ -14,7 +14,7 @@ class UserCreate(UserBase):
 
 class User(UserBase):
     user_id: int
-    
+
     class Config:
         from_attributes = True
 
@@ -33,7 +33,7 @@ class VectorStore(VectorStoreBase):
     user_id: int
     created_at: datetime
     document_count: Optional[int] = 0
-    
+
     class Config:
         from_attributes = True
 
@@ -51,7 +51,7 @@ class Document(DocumentBase):
     doc_id: int
     vectorstore_id: int
     created_at: datetime
-    
+
     class Config:
         from_attributes = True
 
