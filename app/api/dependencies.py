@@ -1,11 +1,12 @@
 from typing import Any, Generator
 
-from config import settings
 from fastapi import Depends, HTTPException, status
 from langchain_huggingface import HuggingFaceEmbeddings
-from services.vectorstore import PostgresVectorStoreService
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
+
+from app.config import settings
+from app.services.vectorstore import PostgresVectorStoreService
 
 engine = create_engine(settings.DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -13,7 +14,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 def get_embedding_model():
     if settings.EMBEDDING_MODEL_TYPE == "sentence_transformers":
-        model_kwargs = {"device": "mps"}
+        model_kwargs = {"device": "cpu"}
         encode_kwargs = {"normalize_embeddings": False}
         embedding_model = HuggingFaceEmbeddings(
             model_name=settings.EMBEDDING_MODEL_NAME,

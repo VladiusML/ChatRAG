@@ -1,12 +1,13 @@
 from typing import List
 
-from api.dependencies import get_db, get_user, get_vectorstore_service
 from fastapi import APIRouter, Depends, HTTPException, status
-from models.models import User
-from schemas import schemas
-from services.vectorstore import PostgresVectorStoreService
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
+
+from app.api.dependencies import get_db, get_user, get_vectorstore_service
+from app.models.models import User
+from app.schemas import schemas
+from app.services.vectorstore import PostgresVectorStoreService
 
 router = APIRouter(
     prefix="/users",

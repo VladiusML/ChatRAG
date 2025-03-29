@@ -1,11 +1,12 @@
 from typing import List
 
-from api.dependencies import get_db, get_vectorstore, get_vectorstore_service
 from fastapi import APIRouter, Depends
-from models import models
-from schemas import schemas
-from services.vectorstore import PostgresVectorStoreService
 from sqlalchemy.orm import Session
+
+from app.api.dependencies import get_db, get_vectorstore, get_vectorstore_service
+from app.models import models
+from app.schemas import schemas
+from app.services.vectorstore import PostgresVectorStoreService
 
 router = APIRouter(prefix="/vectorstores", tags=["Vectorstores"])
 

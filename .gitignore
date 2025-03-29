@@ -4,3 +4,4 @@ pgvector/
 cache_hf/
 .git
 .pytest_cache/
+__pycache__/

@@ -11,8 +11,8 @@ class Settings(BaseSettings):
     POSTGRES_USER: str = os.getenv("POSTGRES_USER", "postgres")
     POSTGRES_PASSWORD: str = os.getenv("POSTGRES_PASSWORD", "mysecretpassword")
     POSTGRES_DB: str = os.getenv("POSTGRES_DB", "rag_vectorstore")
-    POSTGRES_HOST: str = os.getenv("POSTGRES_HOST", "localhost")
-    POSTGRES_PORT: str = os.getenv("POSTGRES_PORT", "5434")
+    POSTGRES_HOST: str = os.getenv("POSTGRES_HOST", "postgres")
+    POSTGRES_PORT: str = os.getenv("POSTGRES_PORT", "5432")
 
     EMBEDDING_MODEL_TYPE: str = os.getenv(
         "EMBEDDING_MODEL_TYPE", "sentence_transformers"

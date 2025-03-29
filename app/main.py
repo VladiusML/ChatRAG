@@ -1,11 +1,12 @@
 import os
 
 import uvicorn
-from api.user_router import router as user_router
-from api.vectorstore_router import router as vectorstore_router
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+
+from app.api.user_router import router as user_router
+from app.api.vectorstore_router import router as vectorstore_router
 
 app = FastAPI(
     title="Vector Store API",
