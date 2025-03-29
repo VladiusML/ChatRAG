@@ -1,9 +1,10 @@
-from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, UniqueConstraint
-from sqlalchemy.dialects.postgresql import JSONB, ARRAY
 from pgvector.sqlalchemy import Vector
+from sqlalchemy import (Column, DateTime, ForeignKey, Integer, String, Text,
+                        UniqueConstraint)
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
 
 Base = declarative_base()
 

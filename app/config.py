@@ -1,6 +1,8 @@
 import os
+from typing import Any, Dict, Optional
+
 from pydantic_settings import BaseSettings
-from typing import Optional, Dict, Any
+
 
 class Settings(BaseSettings):
     APP_NAME: str = "RAG Service API"

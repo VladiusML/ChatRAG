@@ -1,13 +1,15 @@
-import os
 import json
+import os
+from typing import Any, Dict, List, Optional
+
 import psycopg2
-from psycopg2.extras import execute_values
-from typing import List, Dict, Any, Optional
-from langchain.embeddings.base import Embeddings
-from pgvector.psycopg2 import register_vector
 from config import settings
+from langchain.embeddings.base import Embeddings
+from models.models import Document as DBDocument
+from models.models import User, VectorStore
+from pgvector.psycopg2 import register_vector
+from psycopg2.extras import execute_values
 from sqlalchemy.orm import Session
-from models.models import User, VectorStore, Document as DBDocument
 
 
 class PostgresVectorStoreService:

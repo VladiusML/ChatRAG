@@ -1,12 +1,11 @@
-from typing import Generator, Any
-from fastapi import Depends, HTTPException, status
-from sqlalchemy.orm import Session
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from langchain_huggingface import HuggingFaceEmbeddings
+from typing import Any, Generator
 
 from config import settings
+from fastapi import Depends, HTTPException, status
+from langchain_huggingface import HuggingFaceEmbeddings
 from services.vectorstore import PostgresVectorStoreService
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session, sessionmaker
 
 engine = create_engine(settings.DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
