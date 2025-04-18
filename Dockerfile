@@ -1,16 +1,14 @@
-FROM python:3.12-slim
+FROM nvidia/cuda:12.2.2-cudnn8-runtime-ubuntu22.04
 
 WORKDIR /app
 
 RUN apt-get update && \
-    apt-get install -y \
-    libpq-dev \
-    gcc \
-    python3-dev
+    apt-get install -y python3.10 python3.10-dev python3-pip libpq-dev gcc && \
+    ln -s /usr/bin/python3.10 /usr/bin/python && \
+    python -m pip install --upgrade pip
 
 COPY requirements.txt /app/
-
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt --verbose
 
 COPY . /app/
 

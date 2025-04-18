@@ -14,7 +14,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 def get_embedding_model():
     if settings.EMBEDDING_MODEL_TYPE == "sentence_transformers":
-        model_kwargs = {"device": "cpu"}
+        model_kwargs = {"device": "cuda"}
         encode_kwargs = {"normalize_embeddings": False}
         embedding_model = HuggingFaceEmbeddings(
             model_name=settings.EMBEDDING_MODEL_NAME,
