@@ -8,13 +8,24 @@ from sqlalchemy.orm import Session, sessionmaker
 from app.config import settings
 from app.services.vectorstore import PostgresVectorStoreService
 
+import torch
+
 engine = create_engine(settings.DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
+def get_device():
+    if torch.cuda.is_available():
+        return "cuda"
+    elif torch.backends.mps.is_available():
+        return "mps"
+    else:
+        return "cpu"
+    
+
 def get_embedding_model():
     if settings.EMBEDDING_MODEL_TYPE == "sentence_transformers":
-        model_kwargs = {"device": "cuda"}
+        model_kwargs = {"device": get_device()}
         encode_kwargs = {"normalize_embeddings": False}
         embedding_model = HuggingFaceEmbeddings(
             model_name=settings.EMBEDDING_MODEL_NAME,
