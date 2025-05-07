@@ -16,7 +16,7 @@ class Settings(BaseSettings):
         "EMBEDDING_MODEL_TYPE", "sentence_transformers"
     )
     EMBEDDING_MODEL_NAME: str = os.getenv(
-        "EMBEDDING_MODEL_NAME", "ai-forever/sbert_large_nlu_ru"
+        "EMBEDDING_MODEL_NAME", "intfloat/multilingual-e5-large-instruct"
     )
 
     @property
