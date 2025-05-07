@@ -15,15 +15,4 @@ COPY . /app/
 
 EXPOSE 7860
 
-# Добавляем проверку подключения к БД
-CMD ["sh", "-c", "python -c 'import time; import psycopg2; import os; \
-    while True: \
-        try: \
-            conn = psycopg2.connect(os.getenv(\"DATABASE_URL\")); \
-            conn.close(); \
-            break; \
-        except Exception as e: \
-            print(f\"Waiting for database connection... {e}\"); \
-            time.sleep(5);' && \
-    alembic upgrade head && \
-    uvicorn app.main:app --host 0.0.0.0 --port 7860"]
+CMD ["sh", "-c", "python wait_for_db.py && alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 7860"]
