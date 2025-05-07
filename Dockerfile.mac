@@ -9,7 +9,7 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt /app/
-RUN pip install --no-cache-dir -r requirements.txt --verbose
+RUN pip install -r requirements.txt --verbose
 
 COPY . /app/
 
