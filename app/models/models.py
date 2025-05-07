@@ -55,6 +55,6 @@ class Document(Base):
     doc_metadata = Column(JSONB)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    embedding = Column(Vector(768))
+    embedding = Column(Vector(1024))
 
     vectorstore = relationship("VectorStore", back_populates="documents")
