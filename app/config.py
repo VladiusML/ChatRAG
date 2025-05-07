@@ -16,7 +16,7 @@ class Settings(BaseSettings):
         "EMBEDDING_MODEL_TYPE", "sentence_transformers"
     )
     EMBEDDING_MODEL_NAME: str = os.getenv(
-        "EMBEDDING_MODEL_NAME", "sentence-transformers/all-mpnet-base-v2"
+        "EMBEDDING_MODEL_NAME", "ai-forever/sbert_large_nlu_ru"
     )
 
     @property

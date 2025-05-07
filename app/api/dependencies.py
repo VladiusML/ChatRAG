@@ -1,5 +1,6 @@
 from typing import Any, Generator
 
+import torch
 from fastapi import Depends, HTTPException, status
 from langchain_huggingface import HuggingFaceEmbeddings
 from sqlalchemy import create_engine
@@ -7,8 +8,6 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from app.config import settings
 from app.services.vectorstore import PostgresVectorStoreService
-
-import torch
 
 engine = create_engine(settings.DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -21,7 +20,7 @@ def get_device():
         return "mps"
     else:
         return "cpu"
-    
+
 
 def get_embedding_model():
     if settings.EMBEDDING_MODEL_TYPE == "sentence_transformers":
@@ -31,7 +30,6 @@ def get_embedding_model():
             model_name=settings.EMBEDDING_MODEL_NAME,
             model_kwargs=model_kwargs,
             encode_kwargs=encode_kwargs,
-            cache_folder="cache_hf",
         )
         return embedding_model
     else:
