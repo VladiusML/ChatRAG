@@ -7,7 +7,6 @@ sdk: docker
 sdk_version: 3.0.0
 app_file: app/main.py
 pinned: false
-branch: deploy
 ---
 
 # ChatRAG
