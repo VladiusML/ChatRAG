@@ -8,6 +8,10 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
+RUN mkdir -p /app/cache_hf && \
+    chown -R nobody:nogroup /app/cache_hf && \
+    chmod -R 777 /app/cache_hf
+
 COPY requirements.txt /app/
 RUN pip install -r requirements.txt --verbose
 
