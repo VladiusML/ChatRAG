@@ -7,6 +7,9 @@ from fastapi.responses import JSONResponse
 
 from app.api.user_router import router as user_router
 from app.api.vectorstore_router import router as vectorstore_router
+from app.core.logging import get_logger
+
+logger = get_logger(__name__)
 
 app = FastAPI(
     title="Vector Store API",
@@ -28,11 +31,13 @@ app.add_middleware(
 
 @app.get("/", tags=["Health Check"])
 async def health_check():
+    logger.info("Выполнен запрос health check")
     return {"status": "ok"}
 
 
 @app.exception_handler(Exception)
 async def generic_exception_handler(request, exc):
+    logger.error(f"Произошла ошибка: {str(exc)}", exc_info=True)
     if isinstance(exc, HTTPException):
         return JSONResponse(
             status_code=exc.status_code,
@@ -46,4 +51,5 @@ async def generic_exception_handler(request, exc):
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
+    logger.info(f"Запуск сервера на порту {port}")
     uvicorn.run("app.main:app", host="0.0.0.0", port=port, reload=True)
