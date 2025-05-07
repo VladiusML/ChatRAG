@@ -79,3 +79,18 @@ class AddTextsResponse(BaseModel):
 
 class ErrorResponse(BaseModel):
     detail: str
+
+
+class RagQueryResponse(BaseModel):
+    """Схема ответа RAG эндпоинта"""
+
+    status: str = Field(..., description="Статус обработки запроса")
+    message: str = Field(..., description="Сообщение о текущем состоянии")
+
+
+class RagQueryRequest(BaseModel):
+    """Схема запроса RAG эндпоинта"""
+
+    query: str = Field(..., description="Запрос пользователя")
+    k: int = Field(default=4, description="Количество релевантных документов")
+    user_id: int = Field(..., description="ID пользователя")

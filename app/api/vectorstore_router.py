@@ -1,7 +1,7 @@
 from typing import List
 
 import httpx
-from fastapi import APIRouter, BackgroundTasks, Depends
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.api.dependencies import get_db, get_vectorstore, get_vectorstore_service
@@ -21,8 +21,7 @@ async def send_to_llm_service(payload, url):
         async with httpx.AsyncClient() as client:
             response = await client.post(url, json=payload)
             response.raise_for_status()
-            logger.info("Успешный ответ от LLM-сервиса")
-            return response.json()
+            logger.info("Запрос успешно отправлен в LLM-сервис")
     except Exception as e:
         logger.error(f"Ошибка при отправке запроса в LLM-сервис: {str(e)}")
         raise
@@ -86,14 +85,41 @@ def similarity_search(
 )
 async def rag_query(
     vectorstore_id: int,
-    request: schemas.SimilaritySearchRequest,
+    request: schemas.RagQueryRequest,
     background_tasks: BackgroundTasks,
     vectorstore_service: PostgresVectorStoreService = Depends(get_vectorstore_service),
     vectorstore: models.VectorStore = Depends(get_vectorstore),
 ):
+    """
+    RAG (Retrieval-Augmented Generation) эндпоинт для обработки запросов пользователя.
+
+    Процесс работы:
+    1. Поиск релевантных документов в векторном хранилище
+    2. Отправка найденных документов и запроса пользователя в LLM-сервис
+    3. Асинхронная обработка ответа от LLM-сервиса
+
+    Параметры:
+    - vectorstore_id: ID векторного хранилища
+    - request: Запрос пользователя, параметры поиска и ID пользователя
+    - background_tasks: Фоновые задачи FastAPI
+
+    Возвращает:
+    - Статус обработки запроса
+    - Сообщение о текущем состоянии
+    """
     logger.info(
         f"Обработка RAG-запроса '{request.query}' для хранилища {vectorstore_id}"
     )
+
+    if vectorstore.user_id != request.user_id:
+        logger.warning(
+            f"Попытка доступа к чужому vectorstore: user_id={request.user_id}, vectorstore_id={vectorstore_id}"
+        )
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="У вас нет доступа к этому векторному хранилищу",
+        )
+
     results = vectorstore_service.similarity_search(
         vectorstore_id, request.query, request.k
     )
@@ -109,4 +135,4 @@ async def rag_query(
     background_tasks.add_task(send_to_llm_service, payload, external_url)
     logger.info("Задача отправки в LLM-сервис добавлена в фоновые задачи")
 
-    return {"status": "processing", "message": "Документы отправлены в LLM-сервис"}
+    return {"status": "accepted", "message": "Запрос принят в обработку"}
