@@ -91,9 +91,6 @@ async def rag_query(
     vectorstore_service: PostgresVectorStoreService = Depends(get_vectorstore_service),
     vectorstore: models.VectorStore = Depends(get_vectorstore),
 ):
-    """
-    Принимает запрос пользователя, ищет релевантные документы в vectorstore и отправляет их в LLM-сервис.
-    """
     logger.info(
         f"Обработка RAG-запроса '{request.query}' для хранилища {vectorstore_id}"
     )
