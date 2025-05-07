@@ -25,11 +25,12 @@ def get_device():
 def get_embedding_model():
     if settings.EMBEDDING_MODEL_TYPE == "sentence_transformers":
         model_kwargs = {"device": get_device()}
-        encode_kwargs = {"normalize_embeddings": False}
+        encode_kwargs = {"normalize_embeddings": True}
         embedding_model = HuggingFaceEmbeddings(
             model_name=settings.EMBEDDING_MODEL_NAME,
             model_kwargs=model_kwargs,
             encode_kwargs=encode_kwargs,
+            cache_folder="cache_hf",
         )
         return embedding_model
     else:
