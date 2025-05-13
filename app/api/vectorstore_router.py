@@ -131,7 +131,7 @@ async def rag_query(
         "vectorstore_id": vectorstore_id,
     }
 
-    external_url = "http://llm-service/api/generate_answer"
+    external_url = "http://llm-service/api/"
     background_tasks.add_task(send_to_llm_service, payload, external_url)
     logger.info("Задача отправки в LLM-сервис добавлена в фоновые задачи")
 
