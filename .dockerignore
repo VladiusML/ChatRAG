@@ -2,3 +2,4 @@ __pycache__/
 cache_hf/
 venv/
 .pytest_cache/
+.DS_Store
