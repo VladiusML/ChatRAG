@@ -20,7 +20,9 @@ class User(UserBase):
 
 
 class VectorStoreBase(BaseModel):
-    name: str
+    vectorstore_id: str
+    file_name: str
+    text: str
     description: Optional[str] = None
 
 
@@ -92,5 +94,7 @@ class RagQueryRequest(BaseModel):
     """Схема запроса RAG эндпоинта"""
 
     query: str = Field(..., description="Запрос пользователя")
-    k: int = Field(default=4, description="Количество релевантных документов")
-    user_id: int = Field(..., description="ID пользователя")
+
+
+class SelectCurrentVectorStore(BaseModel):
+    file_name: str = Field(..., description="Имя файла векторного хранилища")

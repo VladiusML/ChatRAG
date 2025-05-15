@@ -1,5 +1,5 @@
 import os
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from pydantic_settings import BaseSettings
 
@@ -9,7 +9,9 @@ class Settings(BaseSettings):
     API_V1_PREFIX: str = "/api/v1"
 
     DATABASE_URL: str = os.getenv("DATABASE_URL")
-    CONFIDENCE_THRESHOLD = 0.5
+    CONFIDENCE_THRESHOLD: float = 0.5
+    CURRENT_VECTORSTORE_ID: Optional[int] = None
+    K_RESULTS: int = 5
 
     EMBEDDING_MODEL_TYPE: str = os.getenv(
         "EMBEDDING_MODEL_TYPE", "sentence_transformers"

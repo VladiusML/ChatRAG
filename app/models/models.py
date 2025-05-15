@@ -32,7 +32,7 @@ class VectorStore(Base):
 
     vectorstore_id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.user_id"))
-    name = Column(String(255), nullable=False)
+    file_name = Column(String(255), nullable=False)
     description = Column(Text)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
@@ -42,7 +42,7 @@ class VectorStore(Base):
     )
 
     __table_args__ = (
-        UniqueConstraint("user_id", "name", name="uix_user_vectorstore_name"),
+        UniqueConstraint("user_id", "file_name", name="uix_user_vectorstore_file_name"),
     )
 
 

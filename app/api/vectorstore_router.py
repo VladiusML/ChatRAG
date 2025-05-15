@@ -28,6 +28,29 @@ async def send_to_llm_service(payload, url):
         raise
 
 
+@router.post("/select", response_model=schemas.VectorStore)
+def select_current_vectorstore(
+    request: schemas.SelectCurrentVectorStore, db: Session = Depends(get_db)
+):
+    """Выбрать векторное хранилище по file_name"""
+    logger.info(f"Выбор векторного хранилища с file_name: {request.file_name}")
+    vectorstore = (
+        db.query(models.VectorStore)
+        .filter(models.VectorStore.file_name == request.file_name)
+        .first()
+    )
+
+    if not vectorstore:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Векторное хранилище с file_name '{request.file_name}' не найдено",
+        )
+
+    settings.CURRENT_VECTORSTORE_ID = vectorstore.vectorstore_id
+    logger.info(f"Текущее векторное хранилище: {settings.CURRENT_VECTORSTORE_ID}")
+    return vectorstore
+
+
 @router.get("/{vectorstore_id}", response_model=schemas.VectorStore)
 def read_vectorstore(
     vectorstore: models.VectorStore = Depends(get_vectorstore),
@@ -81,15 +104,15 @@ def similarity_search(
 
 
 @router.post(
-    "/{vectorstore_id}/rag_query/",
+    "/rag_query/",
     summary="RAG: Поиск релевантных документов и отправка их в LLM-сервис",
 )
 async def rag_query(
-    vectorstore_id: int,
     request: schemas.RagQueryRequest,
     background_tasks: BackgroundTasks,
     vectorstore_service: PostgresVectorStoreService = Depends(get_vectorstore_service),
     vectorstore: models.VectorStore = Depends(get_vectorstore),
+    db: Session = Depends(get_db),
 ):
     """
     RAG (Retrieval-Augmented Generation) эндпоинт для обработки запросов пользователя.
@@ -108,49 +131,31 @@ async def rag_query(
     - Статус обработки запроса
     - Сообщение о текущем состоянии
     """
-    logger.info(
-        f"Обработка RAG-запроса '{request.query}' для хранилища {vectorstore_id}"
+
+    vectorstore_id = settings.CURRENT_VECTORSTORE_ID
+    user_id = (
+        db.query(models.VectorStore)
+        .filter(models.VectorStore.vectorstore_id == vectorstore_id)
+        .first()
+        .user_id
     )
-
-    if vectorstore.user_id != request.user_id:
-        logger.warning(
-            f"Попытка доступа к чужому vectorstore: user_id={request.user_id}, vectorstore_id={vectorstore_id}"
-        )
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="У вас нет доступа к этому векторному хранилищу",
-        )
-
     results = vectorstore_service.similarity_search(
-        vectorstore_id, request.query, request.k
+        vectorstore_id, request.query, settings.K_RESULTS
     )
-    logger.info(f"Найдено {len(results)} релевантных документов")
-
-    filtered_results = [
-        r for r in results if r["similarity"] >= settings.CONFIDENCE_THRESHOLD
-    ]
-
-    if not filtered_results:
-        logger.info(
-            f"Не найдено релевантных документов с порогом схожести >= {settings.CONFIDENCE_THRESHOLD}"
-        )
-        payload = {
-            "user_query": request.query,
-            "candidates": [],
-            "vectorstore_id": vectorstore_id,
-            "no_relevant_docs": True,
-            "message": "Не найдено подходящей информации по вашему запросу.",
-        }
-    else:
-        logger.info(
-            f"После фильтрации найдено {len(filtered_results)} релевантных документов"
-        )
-        payload = {
-            "user_query": request.query,
-            "candidates": filtered_results,
-            "vectorstore_id": vectorstore_id,
-            "no_relevant_docs": False,
-        }
+    payload = {
+        "query": request.query,
+        "candidates": [
+            {
+                "content": result.content,
+                "similarity": result.similarity,
+            }
+            for result in results
+        ],
+        "user_id": user_id,
+        "mean_similarity": sum(result.similarity for result in results) / len(results)
+        if results
+        else 0,
+    }
 
     external_url = "http://llm-service/api/"
     background_tasks.add_task(send_to_llm_service, payload, external_url)

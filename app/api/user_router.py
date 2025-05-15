@@ -60,12 +60,16 @@ def create_vectorstore(
     vectorstore_service: PostgresVectorStoreService = Depends(get_vectorstore_service),
     user: User = Depends(get_user),
 ):
-    """Создать новое векторное хранилище для пользователя"""
+    """Создать новое векторное хранилище для пользователя и добвить в него документы"""
     logger.info(
         f"Создание векторного хранилища для пользователя {user_id} с именем: {vectorstore.name}"
     )
     new_vectorstore = vectorstore_service.create_vectorstore(
-        db, user_id, vectorstore.name, vectorstore.description
+        db, user_id, vectorstore.name
+    )
+    metadata = {"file_name": vectorstore.file_name, "id": vectorstore.file_name}
+    vectorstore_service.add_texts(
+        new_vectorstore.vectorstore_id, [vectorstore.text], [metadata]
     )
     logger.info(
         f"Векторное хранилище успешно создано с ID: {new_vectorstore.vectorstore_id}"
