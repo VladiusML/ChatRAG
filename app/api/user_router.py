@@ -1,5 +1,3 @@
-from typing import List
-
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -49,7 +47,7 @@ def read_user(user: User = Depends(get_user)):
 
 
 @router.post(
-    "/{user_id}/vectorstores/",
+    "/{user_id}/create_vectorstore/",
     response_model=schemas.VectorStore,
     status_code=status.HTTP_201_CREATED,
 )
@@ -62,12 +60,15 @@ def create_vectorstore(
 ):
     """Создать новое векторное хранилище для пользователя и добвить в него документы"""
     logger.info(
-        f"Создание векторного хранилища для пользователя {user_id} с именем: {vectorstore.name}"
+        f"Создание векторного хранилища для пользователя {user_id} с именем: {vectorstore.file_name}"
     )
     new_vectorstore = vectorstore_service.create_vectorstore(
-        db, user_id, vectorstore.name
+        db, user_id, vectorstore.file_name
     )
-    metadata = {"file_name": vectorstore.file_name, "id": vectorstore.file_name}
+    metadata = {
+        "file_name": vectorstore.file_name,
+        "id": new_vectorstore.vectorstore_id,
+    }
     vectorstore_service.add_texts(
         new_vectorstore.vectorstore_id, [vectorstore.text], [metadata]
     )
@@ -75,17 +76,3 @@ def create_vectorstore(
         f"Векторное хранилище успешно создано с ID: {new_vectorstore.vectorstore_id}"
     )
     return new_vectorstore
-
-
-@router.get("/{user_id}/vectorstores/", response_model=List[schemas.VectorStore])
-def read_vectorstores(
-    user_id: int,
-    db: Session = Depends(get_db),
-    vectorstore_service: PostgresVectorStoreService = Depends(get_vectorstore_service),
-    user: User = Depends(get_user),
-):
-    """Получить все векторные хранилища пользователя"""
-    logger.info(f"Получение списка векторных хранилищ для пользователя {user_id}")
-    vectorstores = vectorstore_service.get_vectorstores_for_user(db, user_id)
-    logger.info(f"Найдено {len(vectorstores)} векторных хранилищ")
-    return vectorstores

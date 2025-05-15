@@ -8,7 +8,12 @@ class Settings(BaseSettings):
     APP_NAME: str = "RAG Service API"
     API_V1_PREFIX: str = "/api/v1"
 
-    DATABASE_URL: str = os.getenv("DATABASE_URL")
+    DB_USER: str = os.getenv("DB_USER", "postgres")
+    DB_PASSWORD: str = os.getenv("DB_PASSWORD", "mysecretpassword")
+    DB_NAME: str = os.getenv("DB_NAME", "rag_vectorstore")
+    DB_HOST: str = os.getenv("DB_HOST", "postgres")
+    DB_PORT: str = os.getenv("DB_PORT", "5432")
+
     CONFIDENCE_THRESHOLD: float = 0.5
     CURRENT_VECTORSTORE_ID: Optional[int] = None
     K_RESULTS: int = 5
@@ -21,14 +26,26 @@ class Settings(BaseSettings):
     )
 
     @property
+    def DATABASE_URL(self) -> str:
+        """Получить URL подключения к базе данных."""
+        postgres_url = "postgresql://{user}:{password}@{host}:{port}/{db}".format(
+            user=self.DB_USER,
+            password=self.DB_PASSWORD,
+            host=self.DB_HOST,
+            port=self.DB_PORT,
+            db=self.DB_NAME,
+        )
+        return postgres_url
+
+    @property
     def DATABASE_CONNECTION_CONFIG(self) -> Dict[str, Any]:
         """Получить конфигурацию подключения к базе данных."""
         return {
-            "user": self.DATABASE_URL.split("://")[1].split(":")[0],
-            "password": self.DATABASE_URL.split("://")[1].split(":")[1].split("@")[0],
-            "host": self.DATABASE_URL.split("@")[1].split("/")[0],
-            "port": "5432",
-            "database": self.DATABASE_URL.split("/")[-1],
+            "user": self.DB_USER,
+            "password": self.DB_PASSWORD,
+            "host": self.DB_HOST,
+            "port": self.DB_PORT,
+            "database": self.DB_NAME,
         }
 
     class Config:

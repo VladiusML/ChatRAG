@@ -20,10 +20,8 @@ class User(UserBase):
 
 
 class VectorStoreBase(BaseModel):
-    vectorstore_id: str
     file_name: str
     text: str
-    description: Optional[str] = None
 
 
 class VectorStoreCreate(VectorStoreBase):
@@ -35,6 +33,7 @@ class VectorStore(VectorStoreBase):
     user_id: int
     created_at: datetime
     document_count: Optional[int] = 0
+    text: Optional[str] = None
 
     class Config:
         from_attributes = True

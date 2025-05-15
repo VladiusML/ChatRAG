@@ -1,10 +1,8 @@
-from typing import List
-
 import httpx
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.api.dependencies import get_db, get_vectorstore, get_vectorstore_service
+from app.api.dependencies import get_db, get_vectorstore_service
 from app.config import settings
 from app.core.logging import get_logger
 from app.models import models
@@ -51,58 +49,6 @@ def select_current_vectorstore(
     return vectorstore
 
 
-@router.get("/{vectorstore_id}", response_model=schemas.VectorStore)
-def read_vectorstore(
-    vectorstore: models.VectorStore = Depends(get_vectorstore),
-    db: Session = Depends(get_db),
-):
-    """Получить информацию о векторном хранилище"""
-    logger.info(
-        f"Получение информации о векторном хранилище {vectorstore.vectorstore_id}"
-    )
-    document_count = (
-        db.query(models.Document)
-        .filter(models.Document.vectorstore_id == vectorstore.vectorstore_id)
-        .count()
-    )
-    logger.info(f"Найдено {document_count} документов в хранилище")
-    return {**vectorstore.__dict__, "document_count": document_count}
-
-
-@router.post("/{vectorstore_id}/documents/", response_model=schemas.AddTextsResponse)
-def add_texts(
-    request: schemas.AddTextsRequest,
-    vectorstore_id: int,
-    vectorstore_service: PostgresVectorStoreService = Depends(get_vectorstore_service),
-    vectorstore: models.VectorStore = Depends(get_vectorstore),
-):
-    """Добавить тексты в векторное хранилище"""
-    logger.info(f"Добавление {len(request.texts)} текстов в хранилище {vectorstore_id}")
-    doc_ids = vectorstore_service.add_texts(
-        vectorstore_id, request.texts, request.metadatas
-    )
-    logger.info(f"Успешно добавлено {len(doc_ids)} документов")
-    return {"doc_ids": doc_ids}
-
-
-@router.post(
-    "/{vectorstore_id}/search/", response_model=List[schemas.SimilaritySearchResult]
-)
-def similarity_search(
-    request: schemas.SimilaritySearchRequest,
-    vectorstore_id: int,
-    vectorstore_service: PostgresVectorStoreService = Depends(get_vectorstore_service),
-    vectorstore: models.VectorStore = Depends(get_vectorstore),
-):
-    """Выполнить поиск по сходству в векторном хранилище"""
-    logger.info(f"Поиск по запросу '{request.query}' в хранилище {vectorstore_id}")
-    results = vectorstore_service.similarity_search(
-        vectorstore_id, request.query, request.k
-    )
-    logger.info(f"Найдено {len(results)} результатов")
-    return results
-
-
 @router.post(
     "/rag_query/",
     summary="RAG: Поиск релевантных документов и отправка их в LLM-сервис",
@@ -111,7 +57,6 @@ async def rag_query(
     request: schemas.RagQueryRequest,
     background_tasks: BackgroundTasks,
     vectorstore_service: PostgresVectorStoreService = Depends(get_vectorstore_service),
-    vectorstore: models.VectorStore = Depends(get_vectorstore),
     db: Session = Depends(get_db),
 ):
     """
@@ -123,36 +68,42 @@ async def rag_query(
     3. Асинхронная обработка ответа от LLM-сервиса
 
     Параметры:
-    - vectorstore_id: ID векторного хранилища
-    - request: Запрос пользователя, параметры поиска и ID пользователя
+    - request: Запрос пользователя, параметры поиска
     - background_tasks: Фоновые задачи FastAPI
 
     Возвращает:
     - Статус обработки запроса
     - Сообщение о текущем состоянии
     """
+    if settings.CURRENT_VECTORSTORE_ID is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Не выбрано текущее векторное хранилище. Используйте /vectorstores/select для выбора хранилища.",
+        )
 
     vectorstore_id = settings.CURRENT_VECTORSTORE_ID
-    user_id = (
+    vectorstore = (
         db.query(models.VectorStore)
         .filter(models.VectorStore.vectorstore_id == vectorstore_id)
         .first()
-        .user_id
     )
+
+    if not vectorstore:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Выбранное векторное хранилище не найдено",
+        )
+
+    user_id = vectorstore.user_id
+
     results = vectorstore_service.similarity_search(
         vectorstore_id, request.query, settings.K_RESULTS
     )
     payload = {
         "query": request.query,
-        "candidates": [
-            {
-                "content": result.content,
-                "similarity": result.similarity,
-            }
-            for result in results
-        ],
+        "candidates": [{"content": result["content"]} for result in results],
         "user_id": user_id,
-        "mean_similarity": sum(result.similarity for result in results) / len(results)
+        "similarity": sum(result["similarity"] for result in results) / len(results)
         if results
         else 0,
     }

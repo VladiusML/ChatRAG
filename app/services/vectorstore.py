@@ -61,7 +61,7 @@ class PostgresVectorStoreService:
         return db.query(User).filter(User.user_id == user_id).first()
 
     def create_vectorstore(
-        self, db: Session, user_id: int, name: str, description: Optional[str] = None
+        self, db: Session, user_id: int, file_name: str
     ) -> VectorStore:
         """
         Создает новое векторное хранилище для пользователя.
@@ -69,7 +69,7 @@ class PostgresVectorStoreService:
         Args:
             db: Сессия SQLAlchemy
             user_id: ID пользователя
-            name: Имя хранилища
+            file_name: Имя файла векторного хранилища
             description: Описание хранилища
 
         Returns:
@@ -77,8 +77,8 @@ class PostgresVectorStoreService:
         """
         vectorstore = VectorStore(
             user_id=user_id,
-            name=name,
-            description=description or f"Vectorstore for {name}",
+            file_name=file_name,
+            description=f"Vectorstore for {file_name}",
         )
         db.add(vectorstore)
         db.commit()
