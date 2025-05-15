@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.api.dependencies import get_db, get_user, get_vectorstore_service
 from app.core.logging import get_logger
+from app.models import models
 from app.models.models import User
 from app.schemas import schemas
 from app.services.vectorstore import PostgresVectorStoreService
@@ -16,26 +17,28 @@ router = APIRouter(
 )
 
 
-@router.post("/", response_model=schemas.User, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/сreate_user/", response_model=schemas.User, status_code=status.HTTP_201_CREATED
+)
 def create_user(
     user: schemas.UserCreate,
     db: Session = Depends(get_db),
     vectorstore_service: PostgresVectorStoreService = Depends(get_vectorstore_service),
 ):
     """Создать нового пользователя"""
-    logger.info(f"Попытка создания пользователя с username: {user.username}")
+    logger.info(f"Попытка создания пользователя с telegram_id: {user.telegram_id}")
     try:
-        new_user = vectorstore_service.create_user(db, user.username)
+        new_user = vectorstore_service.create_user(db, user.telegram_id)
         logger.info(f"Пользователь успешно создан с ID: {new_user.user_id}")
         return new_user
     except IntegrityError:
         logger.warning(
-            f"Попытка создания пользователя с существующим username: {user.username}"
+            f"Попытка создания пользователя с существующим telegram_id: {user.telegram_id}"
         )
         db.rollback()
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Пользователь с таким username уже существует",
+            detail="Пользователь с таким telegram_id уже существует",
         )
 
 
@@ -47,23 +50,25 @@ def read_user(user: User = Depends(get_user)):
 
 
 @router.post(
-    "/{user_id}/create_vectorstore/",
+    "/create_vectorstore/",
     response_model=schemas.VectorStore,
     status_code=status.HTTP_201_CREATED,
 )
 def create_vectorstore(
     vectorstore: schemas.VectorStoreCreate,
-    user_id: int,
     db: Session = Depends(get_db),
     vectorstore_service: PostgresVectorStoreService = Depends(get_vectorstore_service),
-    user: User = Depends(get_user),
+    db_session: Session = Depends(get_db),
 ):
     """Создать новое векторное хранилище для пользователя и добвить в него документы"""
-    logger.info(
-        f"Создание векторного хранилища для пользователя {user_id} с именем: {vectorstore.file_name}"
+    logger.info(f"Создание векторного хранилища с именем: {vectorstore.file_name}")
+    user = (
+        db.query(models.User)
+        .filter(models.User.telegram_id == vectorstore.telegram_id)
+        .first()
     )
     new_vectorstore = vectorstore_service.create_vectorstore(
-        db, user_id, vectorstore.file_name
+        db, user.user_id, vectorstore.file_name
     )
     metadata = {
         "file_name": vectorstore.file_name,

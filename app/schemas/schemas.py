@@ -22,6 +22,7 @@ class User(UserBase):
 class VectorStoreBase(BaseModel):
     file_name: str
     text: str
+    telegram_id: str
 
 
 class VectorStoreCreate(VectorStoreBase):

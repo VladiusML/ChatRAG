@@ -20,7 +20,7 @@ class User(Base):
     __tablename__ = "users"
 
     user_id = Column(Integer, primary_key=True, index=True)
-    username = Column(String(255), unique=True, nullable=False)
+    telegram_id = Column(String(255), unique=True, nullable=False)
 
     vectorstores = relationship(
         "VectorStore", back_populates="user", cascade="all, delete-orphan"
