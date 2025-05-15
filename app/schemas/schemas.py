@@ -29,12 +29,13 @@ class VectorStoreCreate(VectorStoreBase):
     pass
 
 
-class VectorStore(VectorStoreBase):
+class VectorStore(BaseModel):
     vectorstore_id: int
     user_id: int
+    file_name: str
+    description: Optional[str] = None
     created_at: datetime
     document_count: Optional[int] = 0
-    text: Optional[str] = None
 
     class Config:
         from_attributes = True

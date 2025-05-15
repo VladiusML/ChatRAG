@@ -8,11 +8,13 @@ class Settings(BaseSettings):
     APP_NAME: str = "RAG Service API"
     API_V1_PREFIX: str = "/api/v1"
 
+    IS_DOCKER: bool = os.getenv("IS_DOCKER", "false").lower() == "true"
+
     DB_USER: str = os.getenv("DB_USER", "postgres")
     DB_PASSWORD: str = os.getenv("DB_PASSWORD", "mysecretpassword")
     DB_NAME: str = os.getenv("DB_NAME", "rag_vectorstore")
-    DB_HOST: str = os.getenv("DB_HOST", "postgres")
-    DB_PORT: str = os.getenv("DB_PORT", "5432")
+    DB_HOST: str = os.getenv("DB_HOST", "postgres" if IS_DOCKER else "localhost")
+    DB_PORT: str = os.getenv("DB_PORT", "5432" if IS_DOCKER else "5434")
 
     CONFIDENCE_THRESHOLD: float = 0.5
     CURRENT_VECTORSTORE_ID: Optional[int] = None

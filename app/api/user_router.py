@@ -1,14 +1,13 @@
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.api.dependencies import get_db, get_user, get_vectorstore_service
-from app.core.logging import get_logger
 from app.models import models
 from app.schemas import schemas
 from app.services.vectorstore import PostgresVectorStoreService
-
-logger = get_logger(__name__)
 
 router = APIRouter(
     prefix="/users",
@@ -25,13 +24,13 @@ def create_user(
     vectorstore_service: PostgresVectorStoreService = Depends(get_vectorstore_service),
 ):
     """Создать нового пользователя"""
-    logger.info(f"Попытка создания пользователя с telegram_id: {request.telegram_id}")
+    logging.info(f"Попытка создания пользователя с telegram_id: {request.telegram_id}")
     try:
         new_user = vectorstore_service.create_user(db, request.telegram_id)
-        logger.info(f"Пользователь успешно создан с ID: {new_user.user_id}")
+        logging.info(f"Пользователь успешно создан с ID: {new_user.user_id}")
         return new_user
     except IntegrityError:
-        logger.warning(
+        logging.warning(
             f"Попытка создания пользователя с существующим telegram_id: {request.telegram_id}"
         )
         db.rollback()
@@ -44,7 +43,7 @@ def create_user(
 @router.get("/{user_id}", response_model=schemas.User)
 def read_user(request: schemas.User = Depends(get_user)):
     """Получить информацию о пользователе"""
-    logger.info(f"Получение информации о пользователе с ID: {request.user_id}")
+    logging.info(f"Получение информации о пользователе с ID: {request.user_id}")
     return request
 
 
@@ -60,12 +59,12 @@ def create_vectorstore(
     vectorstore_service: PostgresVectorStoreService = Depends(get_vectorstore_service),
 ):
     """Создать новое векторное хранилище для пользователя и добвить в него документы"""
-    logger.info(
+    logging.info(
         f"Создание векторного хранилища с именем: {request.file_name} для пользователя с telegram_id: {telegram_id}"
     )
     user = db.query(models.User).filter(models.User.telegram_id == telegram_id).first()
     if not user:
-        logger.warning(f"Пользователь с telegram_id {telegram_id} не найден")
+        logging.warning(f"Пользователь с telegram_id {telegram_id} не найден")
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Пользователь с telegram_id {telegram_id} не найден",
@@ -80,7 +79,7 @@ def create_vectorstore(
     vectorstore_service.add_texts(
         new_vectorstore.vectorstore_id, [request.text], [metadata]
     )
-    logger.info(
+    logging.info(
         f"Векторное хранилище успешно создано с ID: {new_vectorstore.vectorstore_id}"
     )
     return new_vectorstore

@@ -33,3 +33,14 @@ repos:
       - id: isort
         args: [--profile=black, --line-length=88]
         exclude: ^.*\b(migrations)\b.*$
+
+  - repo: local
+    hooks:
+      - id: pytest
+        name: pytest
+        entry: pytest
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
+        args: [app/tests/]

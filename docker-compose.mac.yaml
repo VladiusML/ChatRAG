@@ -34,6 +34,7 @@ services:
         condition: service_healthy
     environment:
       DATABASE_URL: postgresql://postgres:mysecretpassword@postgres:5432/rag_vectorstore
+      IS_DOCKER: "true"
     volumes:
       - .:/app
     networks:

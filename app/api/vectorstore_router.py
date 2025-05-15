@@ -1,28 +1,27 @@
+import logging
+
 import httpx
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.api.dependencies import get_db, get_vectorstore_service
 from app.config import settings
-from app.core.logging import get_logger
 from app.models import models
 from app.schemas import schemas
 from app.services.vectorstore import PostgresVectorStoreService
-
-logger = get_logger(__name__)
 
 router = APIRouter(prefix="/vectorstores", tags=["Vectorstores"])
 
 
 async def send_to_llm_service(payload, url):
-    logger.info(f"Отправка запроса в LLM-сервис: {url}")
+    logging.info(f"Отправка запроса в LLM-сервис: {url}")
     try:
         async with httpx.AsyncClient() as client:
             response = await client.post(url, json=payload)
             response.raise_for_status()
-            logger.info("Запрос успешно отправлен в LLM-сервис")
+            logging.info("Запрос успешно отправлен в LLM-сервис")
     except Exception as e:
-        logger.error(f"Ошибка при отправке запроса в LLM-сервис: {str(e)}")
+        logging.error(f"Ошибка при отправке запроса в LLM-сервис: {str(e)}")
         raise
 
 
@@ -33,7 +32,7 @@ def select_current_vectorstore(
     db: Session = Depends(get_db),
 ):
     """Выбрать векторное хранилище по file_name и telegram_id"""
-    logger.info(
+    logging.info(
         f"Выбор векторного хранилища с file_name: {request.file_name} для пользователя {telegram_id}"
     )
 
@@ -130,6 +129,6 @@ async def rag_query(
 
     external_url = "http://llm-service/api/"
     background_tasks.add_task(send_to_llm_service, payload, external_url)
-    logger.info("Задача отправки в LLM-сервис добавлена в фоновые задачи")
+    logging.info("Задача отправки в LLM-сервис добавлена в фоновые задачи")
 
     return {"status": "accepted", "message": "Запрос принят в обработку"}

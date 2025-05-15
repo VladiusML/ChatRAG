@@ -30,7 +30,7 @@ class PostgresVectorStoreService:
         )
         self.embedding_model = embedding_model
 
-    def create_user(self, db: Session, username: str) -> User:
+    def create_user(self, db: Session, telegram_id: str) -> User:
         """
         Создает нового пользователя.
 
@@ -41,7 +41,7 @@ class PostgresVectorStoreService:
         Returns:
             Объект User
         """
-        user = User(username=username)
+        user = User(telegram_id=telegram_id)
         db.add(user)
         db.commit()
         db.refresh(user)
