@@ -5,6 +5,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.api.dependencies import get_db, get_vectorstore, get_vectorstore_service
+from app.config import settings
 from app.core.logging import get_logger
 from app.models import models
 from app.schemas import schemas
@@ -125,11 +126,31 @@ async def rag_query(
     )
     logger.info(f"Найдено {len(results)} релевантных документов")
 
-    payload = {
-        "user_query": request.query,
-        "candidates": results,
-        "vectorstore_id": vectorstore_id,
-    }
+    filtered_results = [
+        r for r in results if r["similarity"] >= settings.CONFIDENCE_THRESHOLD
+    ]
+
+    if not filtered_results:
+        logger.info(
+            f"Не найдено релевантных документов с порогом схожести >= {settings.CONFIDENCE_THRESHOLD}"
+        )
+        payload = {
+            "user_query": request.query,
+            "candidates": [],
+            "vectorstore_id": vectorstore_id,
+            "no_relevant_docs": True,
+            "message": "Не найдено подходящей информации по вашему запросу.",
+        }
+    else:
+        logger.info(
+            f"После фильтрации найдено {len(filtered_results)} релевантных документов"
+        )
+        payload = {
+            "user_query": request.query,
+            "candidates": filtered_results,
+            "vectorstore_id": vectorstore_id,
+            "no_relevant_docs": False,
+        }
 
     external_url = "http://llm-service/api/"
     background_tasks.add_task(send_to_llm_service, payload, external_url)

@@ -8,10 +8,9 @@ class Settings(BaseSettings):
     APP_NAME: str = "RAG Service API"
     API_V1_PREFIX: str = "/api/v1"
 
-    # Получаем DATABASE_URL из переменных окружения
     DATABASE_URL: str = os.getenv("DATABASE_URL")
+    CONFIDENCE_THRESHOLD = 0.5
 
-    # Настройки для модели
     EMBEDDING_MODEL_TYPE: str = os.getenv(
         "EMBEDDING_MODEL_TYPE", "sentence_transformers"
     )
