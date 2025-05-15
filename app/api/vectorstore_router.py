@@ -26,34 +26,50 @@ async def send_to_llm_service(payload, url):
         raise
 
 
-@router.post("/select", response_model=schemas.VectorStore)
+@router.post("/{telegram_id}/select", response_model=schemas.VectorStore)
 def select_current_vectorstore(
-    request: schemas.SelectCurrentVectorStore, db: Session = Depends(get_db)
+    telegram_id: str,
+    request: schemas.SelectCurrentVectorStore,
+    db: Session = Depends(get_db),
 ):
-    """Выбрать векторное хранилище по file_name"""
-    logger.info(f"Выбор векторного хранилища с file_name: {request.file_name}")
+    """Выбрать векторное хранилище по file_name и telegram_id"""
+    logger.info(
+        f"Выбор векторного хранилища с file_name: {request.file_name} для пользователя {telegram_id}"
+    )
+
+    # Сначала находим пользователя по telegram_id
+    user = db.query(models.User).filter(models.User.telegram_id == telegram_id).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Пользователь с telegram_id '{telegram_id}' не найден",
+        )
+
+    # Затем находим векторное хранилище, принадлежащее этому пользователю
     vectorstore = (
         db.query(models.VectorStore)
-        .filter(models.VectorStore.file_name == request.file_name)
+        .filter(
+            models.VectorStore.file_name == request.file_name,
+            models.VectorStore.user_id == user.user_id,
+        )
         .first()
     )
 
     if not vectorstore:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Векторное хранилище с file_name '{request.file_name}' не найдено",
+            detail=f"Векторное хранилище с file_name '{request.file_name}' для пользователя '{telegram_id}' не найдено",
         )
 
-    settings.CURRENT_VECTORSTORE_ID = vectorstore.vectorstore_id
-    logger.info(f"Текущее векторное хранилище: {settings.CURRENT_VECTORSTORE_ID}")
     return vectorstore
 
 
 @router.post(
-    "/rag_query/",
+    "/{telegram_id}/rag_query/",
     summary="RAG: Поиск релевантных документов и отправка их в LLM-сервис",
 )
 async def rag_query(
+    telegram_id: str,
     request: schemas.RagQueryRequest,
     background_tasks: BackgroundTasks,
     vectorstore_service: PostgresVectorStoreService = Depends(get_vectorstore_service),
@@ -63,46 +79,50 @@ async def rag_query(
     RAG (Retrieval-Augmented Generation) эндпоинт для обработки запросов пользователя.
 
     Процесс работы:
-    1. Поиск релевантных документов в векторном хранилище
+    1. Поиск релевантных документов в векторном хранилище пользователя
     2. Отправка найденных документов и запроса пользователя в LLM-сервис
     3. Асинхронная обработка ответа от LLM-сервиса
 
     Параметры:
-    - request: Запрос пользователя, параметры поиска
+    - telegram_id: Идентификатор пользователя Telegram
+    - request: Запрос пользователя с параметрами поиска и file_name
     - background_tasks: Фоновые задачи FastAPI
 
     Возвращает:
     - Статус обработки запроса
     - Сообщение о текущем состоянии
     """
-    if settings.CURRENT_VECTORSTORE_ID is None:
+    # Проверяем наличие пользователя
+    user = db.query(models.User).filter(models.User.telegram_id == telegram_id).first()
+    if not user:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Не выбрано текущее векторное хранилище. Используйте /vectorstores/select для выбора хранилища.",
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Пользователь с telegram_id '{telegram_id}' не найден",
         )
 
-    vectorstore_id = settings.CURRENT_VECTORSTORE_ID
+    if not request.file_name:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Не указано имя файла (file_name)",
+        )
+
+    # Проверяем, что хранилище принадлежит запрашивающему пользователю
     vectorstore = (
         db.query(models.VectorStore)
-        .filter(models.VectorStore.vectorstore_id == vectorstore_id)
+        .filter(
+            models.VectorStore.file_name == request.file_name,
+            models.VectorStore.user_id == user.user_id,
+        )
         .first()
     )
 
-    if not vectorstore:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Выбранное векторное хранилище не найдено",
-        )
-
-    user_id = vectorstore.user_id
-
     results = vectorstore_service.similarity_search(
-        vectorstore_id, request.query, settings.K_RESULTS
+        vectorstore.vectorstore_id, request.query, settings.K_RESULTS
     )
     payload = {
         "query": request.query,
         "candidates": [{"content": result["content"]} for result in results],
-        "user_id": user_id,
+        "user_id": user.user_id,
         "similarity": sum(result["similarity"] for result in results) / len(results)
         if results
         else 0,

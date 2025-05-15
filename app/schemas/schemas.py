@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field
 
 
 class UserBase(BaseModel):
-    username: str
+    telegram_id: str
 
 
 class UserCreate(UserBase):
@@ -94,6 +94,7 @@ class RagQueryRequest(BaseModel):
     """Схема запроса RAG эндпоинта"""
 
     query: str = Field(..., description="Запрос пользователя")
+    file_name: str = Field(..., description="Имя файла векторного хранилища для поиска")
 
 
 class SelectCurrentVectorStore(BaseModel):
