@@ -84,31 +84,3 @@ def test_create_vectorstore(client):
     assert data["file_name"] == "test_file.txt"
     assert "vectorstore_id" in data
     assert data["user_id"] == user_id
-
-
-def test_select_vectorstore(client):
-    """Тест выбора векторного хранилища"""
-    telegram_id = random_telegram_id()
-    user_response = client.post(
-        "/api/v1/users/create_user/", json={"telegram_id": telegram_id}
-    )
-    assert user_response.status_code == 201, user_response.text
-
-    vs_payload = {
-        "file_name": "test_file.txt",
-        "text": "Test content",
-        "telegram_id": telegram_id,
-    }
-    create_response = client.post(
-        f"/api/v1/users/{telegram_id}/create_vectorstore/", json=vs_payload
-    )
-    assert create_response.status_code == 201, create_response.text
-
-    select_payload = {"file_name": "test_file.txt"}
-    response = client.post(
-        f"/api/v1/vectorstores/{telegram_id}/select", json=select_payload
-    )
-    assert response.status_code == 200, response.text
-    data = response.json()
-    assert data["file_name"] == "test_file.txt"
-    assert "vectorstore_id" in data

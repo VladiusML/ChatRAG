@@ -25,44 +25,6 @@ async def send_to_llm_service(payload, url):
         raise
 
 
-@router.post("/{telegram_id}/select", response_model=schemas.VectorStore)
-def select_current_vectorstore(
-    telegram_id: str,
-    request: schemas.SelectCurrentVectorStore,
-    db: Session = Depends(get_db),
-):
-    """Выбрать векторное хранилище по file_name и telegram_id"""
-    logging.info(
-        f"Выбор векторного хранилища с file_name: {request.file_name} для пользователя {telegram_id}"
-    )
-
-    # Сначала находим пользователя по telegram_id
-    user = db.query(models.User).filter(models.User.telegram_id == telegram_id).first()
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Пользователь с telegram_id '{telegram_id}' не найден",
-        )
-
-    # Затем находим векторное хранилище, принадлежащее этому пользователю
-    vectorstore = (
-        db.query(models.VectorStore)
-        .filter(
-            models.VectorStore.file_name == request.file_name,
-            models.VectorStore.user_id == user.user_id,
-        )
-        .first()
-    )
-
-    if not vectorstore:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Векторное хранилище с file_name '{request.file_name}' для пользователя '{telegram_id}' не найдено",
-        )
-
-    return vectorstore
-
-
 @router.post(
     "/{telegram_id}/rag_query/",
     summary="RAG: Поиск релевантных документов и отправка их в LLM-сервис",
@@ -120,15 +82,22 @@ async def rag_query(
     )
     payload = {
         "query": request.query,
-        "candidates": [{"content": result["content"]} for result in results],
-        "user_id": user.user_id,
+        "candidates": [result["content"] for result in results],
+        "telegram_id": telegram_id,
         "similarity": sum(result["similarity"] for result in results) / len(results)
         if results
         else 0,
     }
 
-    external_url = "http://llm-service/api/"
-    background_tasks.add_task(send_to_llm_service, payload, external_url)
-    logging.info("Задача отправки в LLM-сервис добавлена в фоновые задачи")
-
-    return {"status": "accepted", "message": "Запрос принят в обработку"}
+    external_url = "http://llm-nginx:80/api/rag/process"
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(external_url, json=payload)
+            response.raise_for_status()
+            return response.json()
+    except Exception as e:
+        logging.error(f"Ошибка при отправке запроса в LLM-сервис: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Ошибка при обработке запроса: {str(e)}",
+        )
